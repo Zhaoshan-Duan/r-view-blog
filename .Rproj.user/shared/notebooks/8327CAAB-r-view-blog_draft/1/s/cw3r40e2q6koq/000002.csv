@@ -1,0 +1,4 @@
+"0","t_test(x = ncbirths, "
+"0","       formula = weight ~ habit, "
+"0","       order = c(""nonsmoker"", ""smoker""),"
+"0","       alternative = ""two-sided"")"

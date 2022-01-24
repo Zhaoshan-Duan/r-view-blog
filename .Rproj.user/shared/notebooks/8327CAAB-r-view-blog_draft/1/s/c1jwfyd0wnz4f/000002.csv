@@ -1,0 +1,12 @@
+"0","ncbirths %>% "
+"0","  specify(weight ~ habit) %>% "
+"0","  hypothesize(null = ""independence"") %>% "
+"0","  generate(reps = 1000, type = ""permute"")"
+"2","Warning:"
+"2"," Removed 1 rows containing missing values.
+"
+"1","Response: weight (numeric)
+Explanatory: habit (factor)
+Null Hypothesis: independence"
+"1","
+"

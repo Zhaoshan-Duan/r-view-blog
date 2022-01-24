@@ -1,0 +1,11 @@
+"0","obs_diff_prop <- ncbirths %>% "
+"0","  specify(weight ~ habit) %>% "
+"0","  calculate(stat = ""diff in means"", order = c(""nonsmoker"", ""smoker""))"
+"2","Warning:"
+"2"," Removed 1 rows containing missing values.
+"
+"0","obs_diff_prop;null"
+"1","Response: weight (numeric)
+Explanatory: habit (factor)"
+"1","
+"
