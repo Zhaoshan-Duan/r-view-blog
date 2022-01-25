@@ -1,9 +1,10 @@
 ---
-title: 'Modernizing *Intro to Statistics* with `infer` - Part 1:
-  T-test'
+title: 'Modernizing *Intro to Statistics* with `infer` - Part 1: T-test'
 author: "Zhaoshan Duan, Lydia Gibson"
-date: "2021-01-24"
+date: '2021-01-24'
 output:
+  word_document: default
+  pdf_document: default
   html_document:
     df_print: paged
 editor_options:
@@ -14,7 +15,6 @@ editor_options:
 ```{r include=FALSE}
 library(tidyverse)
 library(infer)
-library(openintro)
 ```
 
 In this blog series, we aim to advocate for the modernization of statistical inference in *"Intro to Statistics"* courses by using the [`infer`](https://infer.netlify.app/) package. The `infer` package features tidyverse-friendly wrapper functions to perform inferences and
@@ -25,42 +25,53 @@ Throughout the series, we plan to compare and contrast the classical approach of
 ![FIGURE 1.1 Hypothesis testing with the infer
 package](https://d33wubrfki0l68.cloudfront.net/391315f52b3be002b49628738e22cfd6dae7cae1/cff0f/images/flowcharts/infer/ht.png)
 
-In this first blog, we are focusing on conducting **Two-sample T-test** and compute confidence interval using the `ncbirths` dataset from [*OpenIntro Statistics*](https://www.openintro.org/book/os/). We start with a quick overview of the dataset then proceed to a step-by-step analysis using `infer` pipeline. To clearly demonstrate comparison, for each step of the `infer` framework, we include a brief discussion on the corresponding classical approach.
+In this first blog, we are focusing on conducting **Two-sample T-test** and compute confidence interval using the `ncbirths` dataset from [*OpenIntro Statistics*](https://www.openintro.org/book/os/). We start with a quick overview of the dataset then proceed to a step-by-step analysis using the `infer` pipeline. To clearly demonstrate comparison, we include a brief discussion on the classical approach for each corresponding step of the `infer` framework. 
 
 Last Updated: `r format(Sys.time(), '%B %d, %Y')`
 
 # Data
 
-`ncbirths` records 1000 cases of North Carolina births in 2004, and has been of interest to medical researchers on studying the relation between habits and practices of expectant mothers and the birth of their children. The data looks like this:
-
-```{r data-overview}
+Throughout this post, we make use of the `ncbirths` dataset from the `openintro` package. 
+```{r warning=FALSE}
+library(openintro)
 data(ncbirths)
+```
+
+`ncbirths` records 1000 cases of North Carolina births in 2004, and has been of interest to medical researchers on studying the relation between habits and practices of expectant mothers and the birth of their children. The data looks like this:
+```{r data-overview, warning=FALSE}
 str(ncbirths)
 head(ncbirths)
 ```
 
-To conduct **Two-sample T-test**, we study the relationship between the
-mother's smoking status, and the baby's weight.
-
-# `specify()`
-
-First, we need to specify the variables of interest. In this case, they are `weight` and `habit`. Uinsg `specify()`, we can write:
+In the case of `ncbirths`, we study the mean difference between the expectant mothers' smoking status by looking their babies' weights. From observing the box plot below, we see that babies from mothers that smoke seem to weigh less than babies from mother that do not smoke. However, the difference can be due to sampling. To determine if this difference is statistically significant, we conduct **Two-sample T-test**. 
 
 ```{r}
 ncbirths %>% 
-  specify(weight ~ habit)
+  select(habit, weight) %>% 
+  drop_na() %>% 
+  ggplot(aes(x = habit, y = weight)) +
+  geom_boxplot()+ 
+   labs(x = "Smoking status of mother", y = "Birth weight of baby (in lbs)")
 ```
 
-In **base R**, we can choose manually subset the variables:
+# `specify()`
+First, we need to specify the variables of interest. In this case, they are `weight`, weight of the baby at birth in pounds, and `habit`, status of the mother as a `nonsmoker` or a `smoker`. In **base R**, we can choose to manually subset the variables:
 
 ```{r}
 nc_nosmoker<- subset(ncbirths ,habit == "nonsmoker")
 nc_smoker<- subset(ncbirths ,habit == "smoker")
 ```
 
+Using `specify()`, we can write:
+
+```{r}
+ncbirths %>% 
+  specify(weight ~ habit)
+```
+
 # `hypothesize()`
 
-The next step is to declare the null hypothesis. For our research question, we are examining the weight difference between babies from mothers that smoke and babies from mother that do no smoke. We thus construct the following hypothesis: 
+The next step is to declare the null hypothesis. For our research question, we are examining the weight difference between babies whose mothers do or do not smoke. We thus construct the following hypothesis: 
 
 $$
 \begin{aligned}
@@ -68,7 +79,7 @@ H_0: \mu_{\text{nonsmoker}} - \mu_{\text{smoker}} = 0\\
 H_A: \mu_{\text{nonsmoker}} - \mu_{\text{smoker}} \ne 0 
 \end{aligned}
 $$
-In **base R**, this step is normally done on actual paper and assumed when we run `t.test()`. However, with `infer`, we can use `hypothesize()` and set `null = "independence"` since we have two samples. 
+In **base R**, this step is normally done on *actual* paper and assumed when we run `t.test()`. However, with `infer`, we can use `hypothesize()` and set `null = "independence"` since we have two samples. 
 
 ```{r}
 ncbirths %>% 
@@ -154,7 +165,6 @@ bootstrap_distribution <- ncbirths %>%
 
 percentile_ci <- bootstrap_distribution %>% 
   get_confidence_interval(level = 0.95, type = "percentile")
-percentile_ci$
 ```
 
 Plot the mean difference
@@ -221,51 +231,12 @@ t_test(x = ncbirths,
 
 # Next Part
 
-As students, we were overwhelmed by the use of p-values, various
-statistical tests, and the corresponding interpretations when hypothesis
-testing was first introduced.
+As students, we were overwhelmed by the use of p-values, various statistical tests, and the corresponding interpretations when hypothesis
+testing was first introduced. It only gets better once students acquire the realization and intuition of the [universal pattern](http://allendowney.blogspot.com/2016/06/there-is-still-only-one-test.html) that statistical tests follow through advanced courses.
 
-Treat as a programming problem, not as math problem.
+Moreover, simulation-based inferences are often more visual and intuitive than analytical inferences. While many educators include those numerical approaches in their teaching, it often feels segmented, especially in base R code.
+
+We hope this blog post could provide students' perspectives on statistical education and shed light on the discussion of modernizing "Intro to Statistics" courses.
 
 Follow-up tidymodel.
 
-## Suess' note
-
-How to get the R notebook to have the steps fully demonstrated. - -
-hypothesis - go through t.test - classical interpretation vs. simulation
-interpretaion
-
-Traditionally, only uses t.test(), not aligned with the modern workflow.
-
-modern programming workflow breaks things down, moderndive workflow.
-
-Much better in demonstrating the workflow,
-
-Hypothesis testing is a workflow.
-
-explanability: - "run t.test" what does it mean to the team - `t.test()`
-
-a tool to see what you're doing.
-
-statistics cannot be taughted the same way as Math, but as programming.
-
-Instead of generating p-values
-
-emphasizing data and simulations instead of theory and tests.
-
-a modernized approach of introducing hypothesis testing as a workflow
-framework in .
-
-It only gets better once students acquire the realization and intuition
-of the [universal
-pattern](http://allendowney.blogspot.com/2016/06/there-is-still-only-one-test.html)
-that statistical tests follow through advanced courses.
-
-Moreover, simulation-based inferences are often more visual and
-intuitive than analytical inferences. While many educators include those
-numerical approaches in their teaching, it often feels segmented,
-especially in base R code.
-
-We hope this blog post could provide students' perspectives on
-statistical education and shed light on the discussion of modernizing
-"Intro to Statistics" courses.
