@@ -157,8 +157,6 @@ percentile_ci <- bootstrap_distribution %>%
 percentile_ci$
 ```
 
-
-
 Plot the mean difference
 
 Alternative
