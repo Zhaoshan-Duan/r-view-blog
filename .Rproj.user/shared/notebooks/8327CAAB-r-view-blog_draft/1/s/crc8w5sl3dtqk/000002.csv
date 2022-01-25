@@ -1,11 +1,11 @@
 "0","ncbirths %>% "
 "0","  specify(weight ~ habit) %>% "
-"0","  hypothesize(null = ""point"", mu=0)"
+"0","  hypothesize(null = ""independence"")"
 "2","Warning:"
 "2"," Removed 1 rows containing missing values.
 "
 "1","Response: weight (numeric)
 Explanatory: habit (factor)
-Null Hypothesis: point"
+Null Hypothesis: independence"
 "1","
 "

@@ -108,8 +108,14 @@ observed_statistic
 
 
 ```{r}
-t.test(weight ~ habit, data=ncbirths)
+x <- t.test(weight ~ habit, data=ncbirths)
 ```
+
+
+```{r}
+x_1 <- x$conf.int[[1]]
+```
+
 
 We construct the hypothesis test, and use `t.test()` to examine whether
 the mean difference between the nonsmoker and smoker mothers is
@@ -148,7 +154,7 @@ bootstrap_distribution <- ncbirths %>%
 
 percentile_ci <- bootstrap_distribution %>% 
   get_confidence_interval(level = 0.95, type = "percentile")
-percentile_ci
+percentile_ci$
 ```
 
 
