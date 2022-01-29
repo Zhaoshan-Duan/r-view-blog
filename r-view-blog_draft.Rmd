@@ -1,12 +1,12 @@
 ---
-title: 'Modernizing *Intro to Statistics* with `infer` - Part 1: T-test'
-author: "Zhaoshan Duan, Lydia Gibson"
+title: 'Modernizing *Intro to Statistics* with `infer` - Part 1: Two-Sample T-test'
+author: "Zhaoshan Duan & Dr. Eric Suess"
 date: '2021-01-24'
 output:
-  word_document: default
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
+  word_document: default
 editor_options:
   markdown:
     wrap: 72
@@ -15,12 +15,15 @@ editor_options:
 ```{r include=FALSE}
 library(tidyverse)
 library(infer)
+library(rstatix)
 ```
+
+# Introduction
 
 In this blog series, we aim to advocate for the modernization of statistical inference in *"Intro to Statistics"* courses by using the [`infer`](https://infer.netlify.app/) package. The `infer` package features tidyverse-friendly wrapper functions to perform inferences and
 consolidates a [unified workflow framework](http://allendowney.blogspot.com/2016/06/there-is-still-only-one-test.html), which encompasses the essence of hypothesis testing.
 
-Throughout the series, we plan to compare and contrast the classical approach of conducting hypothesis testing using **base R** functions with the [`infer`](https://infer.netlify.app/) workflow on some of the most popular statistical topics covered in introductory statistics classes. Our goal in each blog is to demonstrate how the `infer` framework adds additional workflow explainability and procedural clarity to the classical hypothesis testing approach.
+Throughout the series, we plan to compare and contrast the classical approach of conducting hypothesis testing using **base R** functions with the [`infer`](https://infer.netlify.app/) workflow on some of the most popular statistical topics covered in introductory statistics classes. Our goal in each blog is to demonstrate how the `infer` framework has the potential to provide additional workflow explainability and procedural clarity to the classical approach.
 
 ![FIGURE 1.1 Hypothesis testing with the infer
 package](https://d33wubrfki0l68.cloudfront.net/391315f52b3be002b49628738e22cfd6dae7cae1/cff0f/images/flowcharts/infer/ht.png)
@@ -31,30 +34,28 @@ Last Updated: `r format(Sys.time(), '%B %d, %Y')`
 
 # Data
 
-Throughout this post, we make use of the `ncbirths` dataset from the `openintro` package. 
+Throughout this post, we make use of the `ncbirths` dataset from the `openintro` package. `ncbirths` records 1000 cases of North Carolina births in 2004, and has been of interest to medical researchers on studying the relation between habits and practices of expectant mothers and the birth of their children. See `?ncbirth` for more information about the dataset. 
+
+The data looks like this:
 ```{r warning=FALSE}
 library(openintro)
-data(ncbirths)
+dplyr::glimpse(ncbirths)
 ```
 
-`ncbirths` records 1000 cases of North Carolina births in 2004, and has been of interest to medical researchers on studying the relation between habits and practices of expectant mothers and the birth of their children. The data looks like this:
-```{r data-overview, warning=FALSE}
-str(ncbirths)
-head(ncbirths)
-```
-
-In the case of `ncbirths`, we study the mean difference between the expectant mothers' smoking status by looking their babies' weights. From observing the box plot below, we see that babies from mothers that smoke seem to weigh less than babies from mother that do not smoke. However, the difference can be due to sampling. To determine if this difference is statistically significant, we conduct **Two-sample T-test**. 
-
+In the case of `ncbirths`, we want to study the mean difference between the expectant mothers' smoking status by looking their babies' weights. Let's take a look of the two groups in box plot: 
 ```{r}
 ncbirths %>% 
   select(habit, weight) %>% 
   drop_na() %>% 
-  ggplot(aes(x = habit, y = weight)) +
+  ggplot(aes(x = habit, y = weight, color=habit)) +
   geom_boxplot()+ 
-   labs(x = "Smoking status of mother", y = "Birth weight of baby (in lbs)")
+  labs(x = "Smoking status of mother", y = "Birth weight of baby (in lbs)") + 
+  scale_x_discrete(labels = c("Nonsmoker", "Smoker")) 
 ```
+From the box plot above, we see that the **average weights of the two group are around 7 lbs**, and that **babies from mothers that smoke seem to weigh less than babies from mother that do not smoke**. Because our research questions is to compare the mean weights of these two groups of babies, we can start with parametric approach by conducting an **unpaired two-sample t-test** to examine the difference in mean. 
 
 # `specify()`
+
 First, we need to specify the variables of interest. In this case, they are `weight`, weight of the baby at birth in pounds, and `habit`, status of the mother as a `nonsmoker` or a `smoker`. In **base R**, we can choose to manually subset the variables:
 
 ```{r}
@@ -62,7 +63,7 @@ nc_nosmoker<- subset(ncbirths ,habit == "nonsmoker")
 nc_smoker<- subset(ncbirths ,habit == "smoker")
 ```
 
-Using `specify()`, we can write:
+Using `infer::specify()`, we can write:
 
 ```{r}
 ncbirths %>% 
@@ -79,7 +80,8 @@ H_0: \mu_{\text{nonsmoker}} - \mu_{\text{smoker}} = 0\\
 H_A: \mu_{\text{nonsmoker}} - \mu_{\text{smoker}} \ne 0 
 \end{aligned}
 $$
-In **base R**, this step is normally done on *actual* paper and assumed when we run `t.test()`. However, with `infer`, we can use `hypothesize()` and set `null = "independence"` since we have two samples. 
+
+In **base R**, this step is normally done on *actual* paper and assumed when we run `t.test()`. With `infer`, we pipe into `hypothesize()` and set `null = "independence"` since we have two samples. 
 
 ```{r}
 ncbirths %>% 
@@ -87,63 +89,69 @@ ncbirths %>%
   hypothesize(null = "independence")
 ```
 
-# `generate()`
-
-After asserting our null hypothesis, we construct a null distribution via permutation. We will obtain 1000 observations that are "shuffled". 
-
-```{r}
-ncbirths %>% 
-  specify(weight ~ habit) %>% 
-  hypothesize(null = "independence") %>% 
-  generate(reps = 1000, type = "permute")
-```
 
 # `calculate()`
-We next calculate the appropriate summary statistics of the null distribution, and the observed statistics.
+
+This is where `infer` shows great potential to add to the classical way of hypothesis testing with **base R**. Traditionally, we calculate *test statistics*, *p-values* and *confidence intervals* via `t.test()` with corresponding parameters. In this example, since we do not assume equal variance, and the data is unpaired, we run the `t.test()` like such: 
+```{r}
+result<- t.test(weight~habit, data=ncbirths, alternative="two.sided", var.eq=F, paired=F); result
+```
+We can also choose to calculate everything manually: 
+$$
+T = \frac{\overline{Y}_1 - \overline{Y}_2}{\sqrt{s^2_1/N_1 + s^2_2/N_2}}
+$$
 
 ```{r}
-null_dist <- ncbirths %>% 
+mu1 <- mean(nc_nosmoke$weight)
+mu2 <- mean(nc_smoke$weight)
+classical_observed_statistics <- mu1-mu2
+sd1 <- sd(nc_nosmoke$weight)
+sd2 <- sd(nc_smoke$weight)
+n1 <- nrow(nc_nosmoke)
+n2 <- nrow(nc_smoke)
+T <- (classical_observed_statistics)/sqrt(sd1^2 / n1 + sd2^2 /n2);
+cat("Test statistics: ", T)
+df <- (sd1^2 / n1 + sd2^2 /n2)^2 / ((sd1^2 / n1 )^2 / (n1-1) + ((sd2^2 /n2)^2 / (n2-1)))
+cat("\nDegree of Freedom: ",df)
+p_val <- 2*pt(T,df, lower.tail = FALSE)
+cat("\np-value: ",p_val)
+```
+
+On the other hand, `infer` has a wrapper function of `t.test()` with better formatted output:  
+
+```{r}
+infer::t_test(ncbirths, formula=weight~habit, order=c("nonsmoker","smoker"), alternative="two-sided")
+```
+
+**However**, the true power of `infer` framework stems from its ease of conducting randomization
+
+It is a process that 
+
+
+
+we use `calculate()` to calculate the observed statistics. We can specify to calculate by 
+
+assigning `"diff in means"`  `stat`.
+
+```{r warning=FALSE}
+infer_observed_statistic <- ncbirths %>% 
   specify(weight ~ habit) %>% 
-  hypothesize(null = "independence") %>% 
-  generate(reps = 1000, type = "permute") %>% 
   calculate(stat = "diff in means", order = c("nonsmoker", "smoker"))
+
+infer_observed_statistic
 ```
 
-```{r}
-observed_statistic <-ncbirths %>% 
+```{r warning=FALSE}
+null_dist <- ncbirths %>%
   specify(weight ~ habit) %>% 
-  calculate(stat = "diff in means", order = c("nonsmoker", "smoker"))
-
-observed_statistic
-```
-
-
-```{r}
-x <- t.test(weight ~ habit, data=ncbirths)
-```
-
-
-```{r}
-x_1 <- x$conf.int[[1]]
-```
-
-
-We construct the hypothesis test, and use `t.test()` to examine whether
-the mean difference between the nonsmoker and smoker mothers is
-statistically significant, and calculate confidence interval for the
-difference between the two.
-
-
-```{r}
-obs_diff_prop <- ncbirths %>% 
-  specify(weight ~ habit) %>% 
-  calculate(stat = "diff in means", order = c("nonsmoker", "smoker"))
-
+  hypothesize(null = "independence") %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "diff in means", order = c("nonsmoker","smoker"))
 ```
 
 ```{r}
-null_dist %>% 
-  get_p_value(obs_stat = observed_statistic, direction = "right")
+null_dist_2_sample %>% 
+  get_p_value(obs_stat = observed_statistic, direction = "left")
 ```
  
 
@@ -167,27 +175,10 @@ percentile_ci <- bootstrap_distribution %>%
   get_confidence_interval(level = 0.95, type = "percentile")
 ```
 
-Plot the mean difference
 
-Alternative
-
-```{r}
-wtg_diff <- nc_nosmoker$weight - nc_smoker$weight
-#wtg_diff <- wtg_diff[!is.na(wtg_diff)] # remove missing entries (NA values)
-
-n <- length(ncbirths)
-
-wtg_diff 
-
-hist(wtg_diff, breaks=100, xlim=c(-0.4,0.4))
-```
 
 ### `infer`
 
-In `infer` package provides a series of functions that provides more
-clarity to the process. Under the hood, these functions are wrapper
-functions to the base R functions we used in the previous
-[section](#base).
 
 Null distribution:
 
@@ -220,23 +211,14 @@ visualize(null, bins = 20) +
   shade_p_value(obs_stat = observed, direction = "right") + labs(x="mean difference")
 ```
 
-Or using wrapper function
 
-```{r}
-t_test(x = ncbirths, 
-       formula = weight ~ habit, 
-       order = c("nonsmoker", "smoker"),
-       alternative = "two-sided")
-```
 
 # Next Part
 
-As students, we were overwhelmed by the use of p-values, various statistical tests, and the corresponding interpretations when hypothesis
-testing was first introduced. It only gets better once students acquire the realization and intuition of the [universal pattern](http://allendowney.blogspot.com/2016/06/there-is-still-only-one-test.html) that statistical tests follow through advanced courses.
+Nonparametic method.
+
+As students, we were overwhelmed by the use of p-values, various statistical tests, and the corresponding interpretations when hypothesis testing was first introduced. It only gets better once students acquire the realization and intuition of the [universal pattern](http://allendowney.blogspot.com/2016/06/there-is-still-only-one-test.html) that statistical tests follow through advanced courses.
 
 Moreover, simulation-based inferences are often more visual and intuitive than analytical inferences. While many educators include those numerical approaches in their teaching, it often feels segmented, especially in base R code.
 
 We hope this blog post could provide students' perspectives on statistical education and shed light on the discussion of modernizing "Intro to Statistics" courses.
-
-Follow-up tidymodel.
-

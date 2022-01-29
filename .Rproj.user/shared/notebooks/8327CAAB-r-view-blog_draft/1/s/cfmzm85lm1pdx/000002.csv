@@ -1,5 +1,0 @@
-"0","visualize(null_dist, bins = 10) + "
-"0","  shade_p_value(obs_stat = observed_statistic, direction = ""two-sided"")"
-"2","Warning:"
-"2"," F usually corresponds to right-tailed tests. Proceed with caution.
-"
