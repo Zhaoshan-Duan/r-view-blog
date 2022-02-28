@@ -1,16 +1,21 @@
 # R-view-blog Project
 
-## Tasks
+
+## Part 1 `t.test()` - Tasks
 
 Fully demonstrate the following `infer` pipeline: 
 * [x] `specify()`
 * [x] `hypothesize()`
-* [?] `generate()`
-* [ ] `calculate()`
-* [ ] `get_confidence_intervals()`
-* [ ] How `infer` fits the modern flow better because of programming: it breaks things down, more visual (a tool to see what you're doing); 
-* [ ] How `infer` embodies that "Hypothesis Testing is a workflow" 
-* [ ] Explanability: what does it meawn when runing `t.test()` 
-* [ ] statistics is better taught as programming than as Math.  
-* [ ] How `infer` emphasizes data and simulations instead of theory and tests, generating p-values
-* [ ] Add comparision between base R permutateion and infer permutateion on `generate()` 
+* [X] `generate()`
+* [X] `calculate()`
+* [X] `shape_p_value()`
+* [X] `get_confidence_intervals()`
+
+Rmarkdown related:
+* [ ] Figure out Side-by-side Compression between two chunks. (`xarigan`?)
+
+## Part 2 - Tasks
+
+Blog goal: 
+* convery the idea that Simulation-based inferences are often more visual and intuitive than analytical inferences. While many educators include those numerical approaches in their teaching, it often feels segmented, especially in base R code.
+* how it aligns with the  intuition of the [universal pattern](http://allendowney.blogspot.com/2016/06/there-is-still-only-one-test.html). 
